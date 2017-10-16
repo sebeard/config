@@ -1,6 +1,3 @@
-[user]
-	email = nathancashmore@ucds.email
-	name = nathancashmoredwp
 [pull]
 	rebase = true
 
