@@ -31,6 +31,8 @@ kops create cluster \
     --networking calico \
     --bastion \
     --cloud=aws \
+    --out=. \
+    --target=terraform \
     ${NAME}
 
 kops update cluster ${NAME} --yes
