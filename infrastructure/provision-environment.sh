@@ -21,12 +21,12 @@ export KOPS_STATE_STORE=s3://staticvoid-co-uk-state-store
 
 echo "Provision cluster"
 kops create cluster \
-    --node-count 3 \
-    --zones eu-west-1a,eu-west-1b,eu-west-1c \
-    --master-zones eu-west-1a,eu-west-1b,eu-west-1c \
+    --node-count 2 \
+    --zones eu-west-2a,eu-west-2b \
+    --master-zones eu-west-2a,eu-west-2b \
     --dns-zone staticvoid.co.uk \
-    --node-size t2.micro \
-    --master-size t2.micro \
+    --node-size t2.nano \
+    --master-size t2.nano \
     --topology private \
     --networking calico \
     --bastion \
@@ -46,6 +46,9 @@ do
     isValidCluster=`kops validate cluster`
 done
 echo ".... cluster is READY"
+
+echo "Set kube context to created service"
+kubectl config use-context ${NAME}.staticvoid.co.uk
 
 echo "Provision DNS extension"
 kubectl apply -f ./kube/external-dns.yaml
@@ -78,12 +81,18 @@ travis env set KUBE_ADMIN_CERT $KUBE_ADMIN_CERT
 travis env set KUBE_ADMIN_KEY $KUBE_ADMIN_KEY
 travis env set KUBE_USERNAME $KUBE_USERNAME
 
-echo "To view the provisioned environment go to ->"
+echo "Export environment"
+
+echo "export NAME=iou.staticvoid.co.uk" > ./env/${APP_NAME}-env.sh
+echo "export KOPS_STATE_STORE=s3://staticvoid-co-uk-state-store" > ./env/${APP_NAME}-env.sh
+echo "export SLACK_HOOK=https://hooks.slack.com/services/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" > ./env/${APP_NAME}-env.sh
+echo "kubectl config use-context ${NAME}" > ./env/${APP_NAME}-env.sh
+
+
+echo "To view the provisioned environment source the environment and goto kube dashboard ->"
 echo ""
-echo "https://api.$APP_NAME.staticvoid.co.uk/"
-echo ""
-echo ".. and login with the admin details obtained from 'kubectl config view'"
-echo "Then goto the following ->"
-echo ""
+echo "source ./env/${APP_NAME}-env.sh"
 echo "https://api.$APP_NAME.staticvoid.co.uk/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/#!/overview?namespace=default"
+echo ""
+echo "NOTE : login with the admin details obtained using"
 echo ""
