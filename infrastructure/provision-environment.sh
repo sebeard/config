@@ -21,9 +21,9 @@ export KOPS_STATE_STORE=s3://staticvoid-co-uk-state-store
 
 echo "Provision cluster"
 kops create cluster \
-    --node-count 2 \
-    --zones eu-west-2a,eu-west-2b \
-    --master-zones eu-west-2a,eu-west-2b \
+    --node-count 1 \
+    --zones eu-west-2a \
+    --master-zones eu-west-2a \
     --dns-zone staticvoid.co.uk \
     --node-size t2.nano \
     --master-size t2.nano \
