@@ -1,5 +1,10 @@
 if [ $# -lt 2 ]
   then
+    echo "Prerequisites:"
+    echo "      - aws configure OR gcloud blah blah"
+    echo "      - travis login --org"
+    echo "      - docker installed"
+    echo ""
     echo "Usage:"
     echo "      provision-environment.sh <app-name> <slack-webhookurl>"
     echo ""
@@ -25,14 +30,12 @@ kops create cluster \
     --zones eu-west-2a \
     --master-zones eu-west-2a \
     --dns-zone staticvoid.co.uk \
-    --node-size t2.nano \
-    --master-size t2.nano \
+    --node-size t2.micro \
+    --master-size t2.micro \
     --topology private \
     --networking calico \
     --bastion \
     --cloud=aws \
-    --out=. \
-    --target=terraform \
     ${NAME}
 
 kops update cluster ${NAME} --yes
@@ -59,6 +62,7 @@ kubectl apply -f ./kube/${APP_NAME}-kube-slack.yaml
 
 echo "Provision dashboard"
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/master/src/deploy/recommended/kubernetes-dashboard.yaml
+# kubectl convert -f https://raw.githubusercontent.com/kubernetes/dashboard/master/src/deploy/recommended/kubernetes-dashboard-head.yaml --output-version=rbac.authorization.k8s.io/v1alpha1 | kubectl apply -f -
 
 echo "Provision docker"
 docker login
@@ -83,16 +87,18 @@ travis env set KUBE_USERNAME $KUBE_USERNAME
 
 echo "Export environment"
 
-echo "export NAME=iou.staticvoid.co.uk" > ./env/${APP_NAME}-env.sh
-echo "export KOPS_STATE_STORE=s3://staticvoid-co-uk-state-store" > ./env/${APP_NAME}-env.sh
-echo "export SLACK_HOOK=https://hooks.slack.com/services/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" > ./env/${APP_NAME}-env.sh
-echo "kubectl config use-context ${NAME}" > ./env/${APP_NAME}-env.sh
+mkdir -p ./env/
 
+echo "export NAME=${NAME}" > ./env/${APP_NAME}-env.sh
+echo "export KOPS_STATE_STORE=${KOPS_STATE_STORE}" > ./env/${APP_NAME}-env.sh
+echo "export SLACK_HOOK=${SLACK_WEBHOOK_URL}" > ./env/${APP_NAME}-env.sh
+echo "kubectl config use-context ${NAME}" > ./env/${APP_NAME}-env.sh
 
 echo "To view the provisioned environment source the environment and goto kube dashboard ->"
 echo ""
 echo "source ./env/${APP_NAME}-env.sh"
-echo "https://api.$APP_NAME.staticvoid.co.uk/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/#!/overview?namespace=default"
+echo "kubectl proxy"
+echo "http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/"
 echo ""
 echo "NOTE : login with the admin details obtained using"
-echo ""
+echo "kubectl config view"
