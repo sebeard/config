@@ -1,9 +1,11 @@
+#!/usr/bin/env bash
+
 if [ $# -lt 2 ]
   then
     echo "Prerequisites:"
     echo "      - aws configure OR gcloud blah blah"
     echo "      - travis login --org"
-    echo "      - docker installed"
+    echo "      - docker login"
     echo ""
     echo "Usage:"
     echo "      provision-environment.sh <app-name> <slack-webhookurl>"
@@ -51,7 +53,7 @@ done
 echo ".... cluster is READY"
 
 echo "Set kube context to created service"
-kubectl config use-context ${NAME}.staticvoid.co.uk
+kubectl config use-context ${NAME}
 
 echo "Provision DNS extension"
 kubectl apply -f ./kube/external-dns.yaml
@@ -62,43 +64,33 @@ kubectl apply -f ./kube/${APP_NAME}-kube-slack.yaml
 
 echo "Provision dashboard"
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/master/src/deploy/recommended/kubernetes-dashboard.yaml
-# kubectl convert -f https://raw.githubusercontent.com/kubernetes/dashboard/master/src/deploy/recommended/kubernetes-dashboard-head.yaml --output-version=rbac.authorization.k8s.io/v1alpha1 | kubectl apply -f -
-
-echo "Provision docker"
-docker login
 
 echo "Provision Travis-CI"
 export KUBE_CA_CERT=$(kubectl config view --flatten --output=json \
        | jq --raw-output '.clusters[0] .cluster ["certificate-authority-data"]')
-export KUBE_ENDPOINT=$(kubectl config view --flatten --output=json \
-       | jq --raw-output '.clusters[0] .cluster ["server"]')
 export KUBE_ADMIN_CERT=$(kubectl config view --flatten --output=json \
        | jq --raw-output '.users[0] .user ["client-certificate-data"]')
 export KUBE_ADMIN_KEY=$(kubectl config view --flatten --output=json \
        | jq --raw-output '.users[0] .user ["client-key-data"]')
-export KUBE_USERNAME=$(kubectl config view --flatten --output=json \
-       | jq --raw-output '.users[0] .user ["username"]')
 
 travis env set KUBE_CA_CERT $KUBE_CA_CERT
-travis env set KUBE_ENDPOINT $KUBE_ENDPOINT
 travis env set KUBE_ADMIN_CERT $KUBE_ADMIN_CERT
 travis env set KUBE_ADMIN_KEY $KUBE_ADMIN_KEY
-travis env set KUBE_USERNAME $KUBE_USERNAME
 
 echo "Export environment"
 
 mkdir -p ./env/
 
 echo "export NAME=${NAME}" > ./env/${APP_NAME}-env.sh
-echo "export KOPS_STATE_STORE=${KOPS_STATE_STORE}" > ./env/${APP_NAME}-env.sh
-echo "export SLACK_HOOK=${SLACK_WEBHOOK_URL}" > ./env/${APP_NAME}-env.sh
-echo "kubectl config use-context ${NAME}" > ./env/${APP_NAME}-env.sh
+echo "export KOPS_STATE_STORE=${KOPS_STATE_STORE}" >> ./env/${APP_NAME}-env.sh
+echo "export SLACK_HOOK=${SLACK_WEBHOOK_URL}" >> ./env/${APP_NAME}-env.sh
+echo "kubectl config use-context ${NAME}" >> ./env/${APP_NAME}-env.sh
 
 echo "To view the provisioned environment source the environment and goto kube dashboard ->"
 echo ""
 echo "source ./env/${APP_NAME}-env.sh"
 echo "kubectl proxy"
-echo "http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/"
+echo "open http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/"
 echo ""
 echo "NOTE : login with the admin details obtained using"
 echo "kubectl config view"
