@@ -90,6 +90,6 @@ echo "kubectl config use-context ${NAME}" >> ./env/${APP_NAME}-env.sh
 echo "To view the provisioned environment source the environment and goto kube dashboard ->"
 echo ""
 echo "source ./env/${APP_NAME}-env.sh"
-echo "open http://api.${NAME}:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/"
+echo "open https://api.${NAME}/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/#!/login"
 echo ""
 echo "NOTE : login with the admin password ${adminpwd}"
