@@ -35,8 +35,8 @@ kops create cluster \
     --zones eu-west-2a \
     --master-zones eu-west-2a \
     --dns-zone staticvoid.co.uk \
-    --node-size t2.micro \
-    --master-size t2.micro \
+    --node-size t2.small \
+    --master-size t2.small \
     --topology private \
     --networking calico \
     --bastion \
