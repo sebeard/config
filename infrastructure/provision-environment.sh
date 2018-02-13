@@ -86,6 +86,7 @@ echo "export NAME=${NAME}" > ./env/${APP_NAME}-env.sh
 echo "export KOPS_STATE_STORE=${KOPS_STATE_STORE}" >> ./env/${APP_NAME}-env.sh
 echo "export SLACK_HOOK=${SLACK_WEBHOOK_URL}" >> ./env/${APP_NAME}-env.sh
 echo "kubectl config use-context ${NAME}" >> ./env/${APP_NAME}-env.sh
+echo "kops export kubecfg --name ${NAME}" >> ./env/${APP_NAME}-env.sh
 
 echo "To view the provisioned environment source the environment and goto kube dashboard ->"
 echo ""

@@ -8,6 +8,9 @@ sudo gem install travis -v 1.8.8 --no-rdoc --no-ri
 
 brew update && brew install awscli
 
+# https://cloud.google.com/sdk/
+gcloud components install kubectl
+
 curl -O https://raw.githubusercontent.com/kubernetes/kops/master/hack/new-iam-user.sh
 
 
