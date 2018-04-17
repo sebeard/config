@@ -2,8 +2,9 @@
 
 BLACK_ON_GREY=$'\e[47;30;1m'
 NONE=$'\e[0m'
+FULL_BUILD=1
 
-if [ $# -lt 3 ]
+if [ $# -lt 1 ]
   then
     echo "Prerequisites:"
     echo "      - gcloud (With project, zone and dns configured)"
@@ -14,7 +15,9 @@ if [ $# -lt 3 ]
     echo "      - docker login"
     echo ""
     echo "Usage:"
-    echo "      provision-gke-environment.sh <cluster> <slack-webhookurl> <db-password>"
+    echo "      provision-gke-environment.sh <cluster> [ <slack-webhookurl> <db-password> ]"
+    echo ""
+    echo "N.B. If only the <cluster> is specified this will be considered a re-run and the env will be sourced from the env dir"
     echo ""
     echo "Add a new Slack Incomming webhook at :"
     echo ""
@@ -25,11 +28,19 @@ if [ $# -lt 3 ]
 fi
 
 APP_NAME=$1
+
+if [[ $# -ne 1 ]]
+  then
+    FULL_BUILD=0
+    SLACK_WEBHOOK_URL=$2
+    DB_NAME=${APP_NAME}-db
+    DB_USERNAME=${APP_NAME}-user
+    DB_PASSWORD=$3
+  else
+    source ./env/${APP_NAME}-env.sh
+fi
+
 PROJECT_NAME=$(gcloud config list --format="value(core.project)")
-SLACK_WEBHOOK_URL=$2
-DB_NAME=${APP_NAME}-db
-DB_USERNAME=${APP_NAME}-user
-DB_PASSWORD=$3
 
 echo "${BLACK_ON_GREY}Running with the following gcloud configuration${NONE}"
 gcloud config list
@@ -45,22 +56,22 @@ echo "${BLACK_ON_GREY}Provision Slack notifications${NONE}"
 sed -e 's|SLACK_WEBHOOK_URL|'"${SLACK_WEBHOOK_URL}"'|g' ./kube/kube-slack.yaml > ./kube/${APP_NAME}-kube-slack.yaml
 kubectl apply -f ./kube/${APP_NAME}-kube-slack.yaml
 
-echo "${BLACK_ON_GREY}Provision storage${NONE}"
-git clone https://github.com/openebs/openebs.git
-kubectl apply -f ./openebs/k8s/openebs-operator.yaml
-kubectl apply -f ./openebs/k8s/openebs-storageclasses.yaml
+#echo "${BLACK_ON_GREY}Provision storage${NONE}"
+#git clone https://github.com/openebs/openebs.git
+#kubectl apply -f ./openebs/k8s/openebs-operator.yaml
+#kubectl apply -f ./openebs/k8s/openebs-storageclasses.yaml
+#
+#echo "${BLACK_ON_GREY}Provision Crunchy Postgres DB${NONE}"
+#./openebs/k8s/demo/crunchy-postgres/run.sh
 
-echo "${BLACK_ON_GREY}Provision Crunchy Postgres DB${NONE}"
-./openebs/k8s/demo/crunchy-postgres/run.sh
+echo "${BLACK_ON_GREY}Provision Postgres database${NONE}"
+MYIP=$(dig +short myip.opendns.com @resolver1.opendns.com)
 
-# echo "${BLACK_ON_GREY}Provision Postgres database${NONE}"
-# MYIP=$(dig +short myip.opendns.com @resolver1.opendns.com)
+gcloud sql instances create ${APP_NAME} --database-version=POSTGRES_9_6 --region=europe-west2 --tier=db-f1-micro --authorized-networks=${MYIP}
+gcloud sql databases create ${APP_NAME}-db --instance=${APP_NAME}
+gcloud sql users create ${DB_USERNAME} '' --instance=${APP_NAME} --password=${DB_PASSWORD}
 
-# gcloud sql instances create ${APP_NAME} --database-version=POSTGRES_9_6 --region=europe-west2 --tier=db-f1-micro --authorized-networks=${MYIP}
-# gcloud sql databases create ${APP_NAME}-db --instance=${APP_NAME}
-# gcloud sql users create ${DB_USERNAME} '' --instance=${APP_NAME} --password=${DB_PASSWORD}
-
-# DB_HOSTNAME=$(gcloud sql instances describe iou --format="value(ipAddresses[0].ipAddress)")
+DB_HOSTNAME=$(gcloud sql instances describe iou --format="value(ipAddresses[0].ipAddress)")
 
 echo "export APP_NAME=${APP_NAME}" > ./env/${APP_NAME}-env.sh
 echo "export SLACK_HOOK=${SLACK_WEBHOOK_URL}" >> ./env/${APP_NAME}-env.sh
