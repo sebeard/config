@@ -38,3 +38,18 @@ pretty_git_log() {
         # Page only if we need to
         less -FXRS
 }
+
+remote_branches_state() {
+        # For each remote branch
+        for branch in `git branch -r | grep -v HEAD`
+        do
+          # Grab the last commit date, author and email of the branch
+          dateInfo=`git show --format="Last commit on %ci (%cr) by %cn (%ce)" $branch | head -n 1`
+          # Grab how many commits behind origin/develop a branch is
+          behindDevelopCommitState=`git rev-list --left-only --count origin/develop...$branch`
+          # Grab how many commits ahead of origin/develop a branch is
+          aheadDevelopCommitState=`git rev-list --right-only --count origin/develop...$branch`
+          # Sew together the results
+          echo "$dateInfo [$behindDevelopCommitState behind $aheadDevelopCommitState ahead] origin/develop" \\t\\t$branch
+        done
+}
