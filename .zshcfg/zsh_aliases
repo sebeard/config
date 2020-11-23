@@ -1,0 +1,16 @@
+alias diff="diff-so-fancy"
+alias j="z"
+alias ll='exa -lahF'
+alias k="kubectl"
+alias git="gpg-connect-agent updatestartuptty /bye > /dev/null; git"
+alias ssh="gpg-connect-agent updatestartuptty /bye > /dev/null; ssh"
+alias ipaddr='dig @resolver1.opendns.com ANY myip.opendns.com +short'
+
+unalias gco
+unalias gd
+unalias gist
+unalias gl
+unalias gp
+unalias gpp
+unalias gs
+unalias gwc

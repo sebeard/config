@@ -1,0 +1,98 @@
+# 1Password Functions - On/Off/GetOtp
+opon() {
+  if [[ -z $OP_SESSION_my ]]; then
+    eval $(op signin my)
+  fi
+}
+
+opoff() {
+  op signout
+  unset OP_SESSION_my
+}
+
+getOtp() {
+  opon
+  op get totp "$1"
+  opoff
+}
+
+# AWS 
+aws-set-env() {
+  . ${HOME}/bin/set-env stuart.beard $(getOtp "AWS - Non Prod")
+  echo
+  aws eks update-kubeconfig --name ecom-su-dev-eks
+}
+
+# Docker Functions
+#No longer used but kept in case the max_map_count config is useful (with ElasticASearch)
+#docker-machine-restart() {
+#  docker-machine restart && docker-machine ssh default sudo sysctl -w vm.max_map_count=262144 && eval $(docker-machine env)
+#}
+
+docker-stop-all() {
+  docker stop $(docker ps -a -q)
+}
+
+docker-kill-all() {
+  docker kill $(docker ps -a -q)
+}
+
+docker-rm-all() {
+  docker rm $(docker ps -a -q)
+}
+
+docker-rm-find() {
+  docker rm -f $(docker ps -a | grep ${1} | awk '{print $1}')
+}
+
+docker-watch-ps() {
+  watch 'docker ps --format "table {{.ID}}\t{{.Image}}\t{{.RunningFor}}\t{{.Status}}\t{{.Names}}"'
+}
+
+# Graph QL Functional Testing
+graph-functional() {
+  docker build -f Dockerfile.${1} -t ${1}-mock . && docker run --rm --name ${1}-mock -p 8080:8080 ${1}-mock --local-response-templating --disable-banner
+}
+
+# JENV Switch functions
+jdk8() {
+  jenv global openjdk64-1.8.0.232
+  source ~/.zshrc
+  echo $JAVA_HOME
+}
+
+jdk11() {
+  jenv global openjdk64-11.0.5
+  source ~/.zshrc
+  echo $JAVA_HOME
+}
+
+# JEST
+jest() {
+  yarn test-jest -t ${1}
+}
+
+# JWT Decoder
+jwt-decode() {
+  echo $(pbpaste) | step crypto jwt inspect -insecure | jq '.payload.exp |= "\(.) : \(. | todate)" | .payload.nbf |= "\(.) : \(. | todate)" | .payload.iat |= "\(.) : \(. | todate)"'
+}
+
+# MAC OSX show/hide hidden files in finder
+show-hidden-files() {
+  defaults write com.apple.finder AppleShowAllFiles -boolean true ; killall Finder /System/Library/CoreServices/Finder.app
+}
+
+hide-hidden-files() {
+  defaults write com.apple.finder AppleShowAllFiles -boolean false ; killall Finder /System/Library/CoreServices/Finder.app
+}
+
+# PGP encrypt/decrypt
+secret () {
+        output="${1}".$(date +%s).enc
+        gpg --encrypt --armor --output ${output} -r 0x378F7ADE3FC73F27 "${1}" && echo "${1} -> ${output}"
+}
+
+reveal () {
+        output=$(echo "${1}" | rev | cut -c16- | rev)
+        gpg --decrypt --output ${output} "${1}" && echo "${1} -> ${output}"
+}
