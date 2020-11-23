@@ -1,13 +1,13 @@
 # 1Password Functions - On/Off/GetOtp
 opon() {
-  if [[ -z $OP_SESSION_mcdonald_family ]]; then
-    eval $(op signin mcdonald_family)
+  if [[ -z $OP_SESSION_my ]]; then
+    eval $(op signin my)
   fi
 }
 
 opoff() {
   op signout
-  unset OP_SESSION_mcdonald_family
+  unset OP_SESSION_my
 }
 
 getOtp() {
@@ -18,7 +18,7 @@ getOtp() {
 
 # AWS 
 aws-set-env() {
-  . ${HOME}/bin/set-env stuart.beard $(getOtp AWS)
+  . ${HOME}/bin/set-env stuart.beard $(getOtp "AWS - Non Prod")
   echo
   aws eks update-kubeconfig --name ecom-su-dev-eks
 }
